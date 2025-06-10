@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Weather Display</title>
+    <!-- Inter font for a clean, modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000; /* Black background */
+            color: #fff; /* White text */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        .container {
+            background-color: #1a1a1a; /* Slightly lighter black for content area */
+            padding: 40px;
+            border-radius: 12px; /* Rounded corners */
+            box-shadow: 0 4px 20px #6128ff; /* Subtle glow effect */
+            text-align: center;
+            max-width: 600px; /* Max width for content */
+            width: 90%; /* Fluid width */
+            border: 1px solid #333; /* Soft border */
+        }
+        h1 {
+            color: #ffffff; /* Cyan for title */
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 2.5em;
+        }
+        .search-area {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px; /* Space between input and button */
+            justify-content: center;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+        }
+        input[type="text"] {
+            padding: 12px 18px;
+            border: 1px solid #2b00a1;
+            border-radius: 8px;
+            background-color: #0d0d0d;
+            color: #fff;
+            font-size: 1.1em;
+            outline: none;
+            flex-grow: 1; /* Allow input to grow */
+            max-width: 300px; /* Max width for input */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input[type="text"]::placeholder {
+            color: #aaa;
+        }
+        input[type="text"]:focus {
+            border-color: #2b00a1; /* Brighter cyan on focus */
+            box-shadow: 0 0 8px rgba(85, 43, 255, 0.5);
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #2b00a1; /* Cyan button */
+            color: #ffffff; /* Black text on button */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 700;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        button:hover {
+            background-color: #00bfff; /* Brighter cyan on hover */
+            transform: translateY(-2px);
+        }
+        #weather-output {
+            background-color: #0d0d0d; /* Darker background for output */
+            padding: 25px;
+            border-radius: 8px;
+            min-height: 60px; /* Ensure space for output */
+            white-space: pre; /* Preserve whitespace and newlines for ASCII art */
+            font-family: 'monospace', 'Courier New', Courier, monospace; /* Monospace for ASCII art */
+            text-align: left; /* Keep ASCII art left-aligned within its block */
+            font-size: 1.05em;
+            line-height: 1.2; /* Tighter line height for ASCII art */
+            overflow-x: auto; /* Allow horizontal scrolling if art is too wide */
+            border: 1px dashed #333; /* Dashed border for output area */
+            color: #ffffff; /* Green for ASCII art output */
+            display: inline-block; /* Make it behave like inline element that respects width */
+            text-align: left; /* Keep the text *inside* the pre left-aligned */
+            /* The `container`'s `text-align: center;` will center this `inline-block` */
+            /* You might also want to set a max-width if it gets too wide */
+            max-width: fit-content; /* Make the box only as wide as its content */
+        }
+        .error-message {
+            color: #ff3333; /* Red for errors */
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+            .container {
+                padding: 20px;
+            }
+            .search-area {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            input[type="text"] {
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fake Weather</h1>
+        <div class="search-area">
+            <input type="text" id="cityInput" placeholder="Enter city name (e.g., Montreal)">
+            <button id="getWeatherBtn">Get Weather</button>
+        </div>
+        <pre id="weather-output">
+            Search for a city to see its fake weather!
+        </pre>
+        <div id="errorMessage" class="error-message"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cityInput = document.getElementById('cityInput');
+            const getWeatherBtn = document.getElementById('getWeatherBtn');
+            const weatherOutput = document.getElementById('weather-output');
+            const errorMessageDiv = document.getElementById('errorMessage');
+
+            // Function to fetch weather data
+            async function fetchWeather() {
+                const cityName = cityInput.value.trim();
+                errorMessageDiv.textContent = ''; // Clear previous errors
+                weatherOutput.textContent = 'Loading weather...'; // Show loading message
+
+                if (!cityName) {
+                    errorMessageDiv.textContent = 'Please enter a city name.';
+                    weatherOutput.textContent = '';
+                    return;
+                }
+
+                // IMPORTANT: Ensure this port matches the API_PORT in your config.cfg and app.py
+                const apiPort = 5000; 
+                const apiUrl = `http://127.0.0.1:${apiPort}/weather/${encodeURIComponent(cityName)}`;
+
+                try {
+                    const response = await fetch(apiUrl);
+                    
+                    if (!response.ok) {
+                        // If response is not OK (e.g., 404, 500), read as text
+                        const errorText = await response.text();
+                        throw new Error(errorText || `HTTP error! Status: ${response.status}`);
+                    }
+
+                    const weatherText = await response.text(); // Get plain text response
+                    weatherOutput.textContent = weatherText;
+                } catch (error) {
+                    console.error('Error fetching weather:', error);
+                    errorMessageDiv.textContent = `Failed to get weather: ${error.message}`;
+                    weatherOutput.textContent = 'Could not fetch weather data.';
+                }
+            }
+
+            // Event listeners
+            getWeatherBtn.addEventListener('click', fetchWeather);
+
+            cityInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    fetchWeather();
+                }
+            });
+
+            // Optional: Load initial weather for a default city on page load
+            cityInput.value = 'Montreal'; // Set a default city
+            fetchWeather();
+        });
+    </script>
+</body>
+</html>
